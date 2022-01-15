@@ -223,6 +223,7 @@ func (s *Scanner) scanToken() {
     }
 	}
 }
+
 func (s *Scanner) addToken(token TokenType) {
 	newToken := Token{
 		token,
@@ -272,17 +273,6 @@ func (s *Scanner) isAtEnd() bool {
 
 var hadError = false
 
-func main() {
-	if len(os.Args) > 2 {
-		fmt.Println("Usage: glox [script]")
-		os.Exit(64)
-	} else if len(os.Args) == 2 {
-		runFile(os.Args[1])
-	} else {
-		runPrompt()
-	}
-}
-
 func runFile(path string) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -320,4 +310,99 @@ func loxError(line int, message string) {
 func report(line int, where, message string) {
 	fmt.Printf("[line %d] Error %s: %s\n", line, where, message)
 	hadError = true
+}
+
+func main() {
+  var expression Expr
+  expression = &Binary{
+    left: &Unary{
+      operator: Token{MINUS, "-", nil, 1},
+      right: &Literal{123},
+    },
+    operator: Token{STAR, "*", nil, 1},
+    right: &Grouping{
+      expression: &Literal{45.67},
+    },
+  }
+
+  var printer Visitor
+  printer = Printer{}
+
+  fmt.Println(expression.accept(printer))
+
+  //	if len(os.Args) > 2 {
+  //		fmt.Println("Usage: glox [script]")
+  //		os.Exit(64)
+  //	} else if len(os.Args) == 2 {
+  //		runFile(os.Args[1])
+  //	} else {
+  //		runPrompt()
+  //	}
+}
+
+// =============== Vistor Interface =============== //
+type Visitor interface {
+  binaryExpr(expr Expr) interface{}
+  groupingExpr(expr Expr) interface{}
+  literalExpr(expr Expr) interface{}
+  unaryExpr(expr Expr) interface{}
+}
+
+type Printer struct {
+}
+
+func (p Printer) binaryExpr(expr Expr) interface{} {
+  return "("
+}
+
+func (p Printer) groupingExpr(expr Expr) interface{} {
+  return "grouping"
+}
+
+func (p Printer) literalExpr(expr Expr) interface{} {
+  return "literal"
+}
+
+func (p Printer) unaryExpr(expr Expr) interface{} {
+  return "unary"
+}
+
+// =============== Expression Interface =============== //
+type Expr interface {
+  accept(v Visitor) interface{}
+}
+
+type Binary struct {
+  left Expr
+  operator Token
+  right Expr
+}
+
+type Unary struct {
+  operator Token
+  right Expr
+}
+
+type Grouping struct {
+  expression Expr
+}
+
+type Literal struct {
+  value interface{}
+}
+
+func (b *Binary) accept(v Visitor) interface{} {
+  return v.binaryExpr(b)
+}
+
+func (u *Unary) accept(v Visitor) interface{} {
+  return v.unaryExpr(u)
+}
+
+func (g *Grouping) accept(v Visitor) interface{} {
+  return v.groupingExpr(g)
+}
+
+func (l *Literal) accept(v Visitor) interface{} {
+  return v.literalExpr(l)
 }
