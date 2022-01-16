@@ -69,46 +69,46 @@ type Token struct {
 }
 
 func (t Token) String() string {
-  return fmt.Sprintf("type: %d, lexeme: %v, literal: %v", t.ktype, t.lexeme, t.literal)
+	return fmt.Sprintf("type: %d, lexeme: %v, literal: %v", t.ktype, t.lexeme, t.literal)
 }
 
 type Scanner struct {
-	source  string
-	tokens  []Token
-	start   int
-	current int
-	line    int
-  keywords map[string]TokenType
+	source   string
+	tokens   []Token
+	start    int
+	current  int
+	line     int
+	keywords map[string]TokenType
 }
 
 func NewScanner(source string) *Scanner {
-  keywords := make(map[string]TokenType)
+	keywords := make(map[string]TokenType)
 
-  keywords["and"] = AND
-  keywords["class"] = CLASS
-  keywords["else"] = ELSE 
-  keywords["false"] = FALSE 
-  keywords["for"] = FOR 
-  keywords["fun"] = FUN 
-  keywords["if"] = IF 
-  keywords["nil"] = NIL
-  keywords["or"] = OR 
-  keywords["print"] = PRINT
-  keywords["return"] = RETURN 
-  keywords["super"] = SUPER 
-  keywords["this"] = THIS
-  keywords["true"] = TRUE 
-  keywords["var"] = VAR
-  keywords["while"] = WHILE 
+	keywords["and"] = AND
+	keywords["class"] = CLASS
+	keywords["else"] = ELSE
+	keywords["false"] = FALSE
+	keywords["for"] = FOR
+	keywords["fun"] = FUN
+	keywords["if"] = IF
+	keywords["nil"] = NIL
+	keywords["or"] = OR
+	keywords["print"] = PRINT
+	keywords["return"] = RETURN
+	keywords["super"] = SUPER
+	keywords["this"] = THIS
+	keywords["true"] = TRUE
+	keywords["var"] = VAR
+	keywords["while"] = WHILE
 
-  return &Scanner{
-    source: source,
-    tokens: make([]Token, 0),
-    start: 0,
-    current : 0,
-    line: 1,
-    keywords: keywords,
-  }
+	return &Scanner{
+		source:   source,
+		tokens:   make([]Token, 0),
+		start:    0,
+		current:  0,
+		line:     1,
+		keywords: keywords,
+	}
 }
 
 func (s *Scanner) ScanTokens() []Token {
@@ -123,104 +123,115 @@ func (s *Scanner) ScanTokens() []Token {
 func (s *Scanner) scanToken() {
 	c := s.advance()
 	switch c {
-	case '(': s.addToken(LEFT_PAREN)
-	case ')': s.addToken(RIGHT_PAREN)
-	case '{': s.addToken(LEFT_BRACE)
-	case '}': s.addToken(RIGHT_BRACE)
-	case ',': s.addToken(COMMA)
-	case '.': s.addToken(DOT)
-	case '-': s.addToken(MINUS)
-	case '+': s.addToken(PLUS)
-	case ';': s.addToken(SEMICOLON)
-	case '*': s.addToken(STAR)
-  case '!':
-    if s.peek() == '=' {
-      s.advance()
-      s.addToken(BANG_EQUAL)
-    } else {
-      s.addToken(BANG)
-    }
-  case '=':
-    if s.peek() == '=' {
-      s.advance()
-      s.addToken(EQUAL_EQUAL)
-    } else {
-      s.addToken(EQUAL)
-    }
-  case '<':
-    if s.peek() == '=' {
-      s.advance()
-      s.addToken(LESS_EQUAL)
-    } else {
-      s.addToken(LESS)
-    }
-  case '>':
-    if s.peek() == '=' {
-      s.advance()
-      s.addToken(GREATER_EQUAL)
-    } else {
-      s.addToken(GREATER)
-    }
-  case '/':
-    if s.peek() == '/' { // this is a comment. advance.
-      for s.peek() != '\n' && !s.isAtEnd() {
-        s.advance()
-      }
-    } else {
-      s.addToken(SLASH)
-    }
-  case '"': {
-    for s.peek() != '"' && !s.isAtEnd() {
-      if s.peek() == '\n' {
-        s.line++
-      }
-      s.advance()
-    }
+	case '(':
+		s.addToken(LEFT_PAREN)
+	case ')':
+		s.addToken(RIGHT_PAREN)
+	case '{':
+		s.addToken(LEFT_BRACE)
+	case '}':
+		s.addToken(RIGHT_BRACE)
+	case ',':
+		s.addToken(COMMA)
+	case '.':
+		s.addToken(DOT)
+	case '-':
+		s.addToken(MINUS)
+	case '+':
+		s.addToken(PLUS)
+	case ';':
+		s.addToken(SEMICOLON)
+	case '*':
+		s.addToken(STAR)
+	case '!':
+		if s.peek() == '=' {
+			s.advance()
+			s.addToken(BANG_EQUAL)
+		} else {
+			s.addToken(BANG)
+		}
+	case '=':
+		if s.peek() == '=' {
+			s.advance()
+			s.addToken(EQUAL_EQUAL)
+		} else {
+			s.addToken(EQUAL)
+		}
+	case '<':
+		if s.peek() == '=' {
+			s.advance()
+			s.addToken(LESS_EQUAL)
+		} else {
+			s.addToken(LESS)
+		}
+	case '>':
+		if s.peek() == '=' {
+			s.advance()
+			s.addToken(GREATER_EQUAL)
+		} else {
+			s.addToken(GREATER)
+		}
+	case '/':
+		if s.peek() == '/' { // this is a comment. advance.
+			for s.peek() != '\n' && !s.isAtEnd() {
+				s.advance()
+			}
+		} else {
+			s.addToken(SLASH)
+		}
+	case '"':
+		{
+			for s.peek() != '"' && !s.isAtEnd() {
+				if s.peek() == '\n' {
+					s.line++
+				}
+				s.advance()
+			}
 
-    if s.isAtEnd() { // we did not terminate the quote
-      loxError(s.line, "Unterminated string.")
-    }
-    s.advance() // consume the closing quote
-    value := s.source[s.start + 1:s.current - 1]
-    s.addTokenWithValue(STRING, value)
-  }
-  case ' ':
-  case '\r':
-  case '\t':
-    break
-  case '\n':
-    s.line++
-    break
-  default:
-    if unicode.IsDigit(rune(c)) {
-      for unicode.IsDigit(rune(s.peek())) {
-        s.advance()
-      }
-      if s.peek() == '.' && unicode.IsDigit(rune(s.peekNext())) {
-        s.advance()
-        for unicode.IsDigit(rune(s.peek())) {
-          s.advance()
-        }
-      }
-      value, err := strconv.ParseFloat(s.source[s.start:s.current], 64)
-      if err != nil {
-        panic(err) // oh god
-      }
-      s.addTokenWithValue(NUMBER, value)
-    } else if unicode.IsLetter(rune(c)) {
-      for unicode.IsLetter(rune(s.peek())) || unicode.IsDigit(rune(s.peek())) {
-        s.advance()
-      }
-      text := s.source[s.start:s.current]
-      textType := s.keywords[text]
-      if textType == 0 {
-        s.addToken(IDENTIFIER)
-      } else {
-        s.addToken(textType)
-      }
-    } else {
-      loxError(s.line, "Unexpected character.")
-    }
+			if s.isAtEnd() { // we did not terminate the quote
+				loxError(s.line, "Unterminated string.")
+			}
+			s.advance() // consume the closing quote
+			value := s.source[s.start+1 : s.current-1]
+			s.addTokenWithValue(STRING, value)
+		}
+	case ' ':
+	case '\r':
+	case '\t':
+		break
+	case '\n':
+		s.line++
+		break
+	default:
+		if unicode.IsDigit(rune(c)) {
+			for unicode.IsDigit(rune(s.peek())) {
+				s.advance()
+			}
+			if s.peek() == '.' && unicode.IsDigit(rune(s.peekNext())) {
+				s.advance()
+				for unicode.IsDigit(rune(s.peek())) {
+					s.advance()
+				}
+			}
+			value, err := strconv.ParseFloat(s.source[s.start:s.current], 64)
+			if err != nil {
+				panic(err) // oh god
+			}
+			s.addTokenWithValue(NUMBER, value)
+		} else if unicode.IsLetter(rune(c)) {
+			for unicode.IsLetter(rune(s.peek())) || unicode.IsDigit(rune(s.peek())) {
+				s.advance()
+			}
+			text := s.source[s.start:s.current]
+			textType := s.keywords[text]
+			if textType == 0 {
+				s.addToken(IDENTIFIER)
+			} else {
+				s.addToken(textType)
+			}
+		} else {
+			loxError(s.line, "Unexpected character.")
+		}
 	}
 }
 
@@ -235,19 +246,19 @@ func (s *Scanner) addToken(token TokenType) {
 }
 
 func (s *Scanner) addTokenWithValue(token TokenType, value interface{}) {
-  newToken := Token{
-    token,
-    s.source[s.start:s.current],
-    value,
-    s.line,
-  }
-  s.tokens = append(s.tokens, newToken)
+	newToken := Token{
+		token,
+		s.source[s.start:s.current],
+		value,
+		s.line,
+	}
+	s.tokens = append(s.tokens, newToken)
 }
 
 func (s *Scanner) advance() byte {
-  char := s.source[s.current]
-  s.current++
-  return char
+	char := s.source[s.current]
+	s.current++
+	return char
 }
 
 func (s *Scanner) peek() byte {
@@ -258,17 +269,17 @@ func (s *Scanner) peek() byte {
 }
 
 func (s *Scanner) peekNext() byte {
-  if s.current + 1 >= len(s.source) {
-    return '\x00'
-  }
-  return s.source[s.current+1]
+	if s.current+1 >= len(s.source) {
+		return '\x00'
+	}
+	return s.source[s.current+1]
 }
 
 func (s *Scanner) isAtEnd() bool {
-  if s.current >= len(s.source) {
-    return true
-  }
-  return false
+	if s.current >= len(s.source) {
+		return true
+	}
+	return false
 }
 
 var hadError = false
@@ -298,7 +309,7 @@ func run(code string) {
 	scanner := NewScanner(code)
 	tokens := scanner.ScanTokens()
 	for _, token := range tokens {
-    fmt.Printf("token: %v\n", token)
+		fmt.Printf("token: %v\n", token)
 	}
 }
 
@@ -313,96 +324,109 @@ func report(line int, where, message string) {
 }
 
 func main() {
-  var expression Expr
-  expression = &Binary{
-    left: &Unary{
-      operator: Token{MINUS, "-", nil, 1},
-      right: &Literal{123},
-    },
-    operator: Token{STAR, "*", nil, 1},
-    right: &Grouping{
-      expression: &Literal{45.67},
-    },
-  }
+	var expression Binary
+	expression = Binary{
+		left: Unary{
+			operator: Token{MINUS, "-", nil, 1},
+			right:    Literal{123},
+		},
+		operator: Token{STAR, "*", nil, 1},
+		right: Grouping{
+			expression: Unary{
+				operator: Token{BANG, "!", nil, 1},
+				right:    Literal{"hello"},
+			},
+		},
+	}
 
-  var printer Visitor
-  printer = Printer{}
+	var printerVisitor PrinterVisitor
+	printerVisitor = PrinterVisitor{
+		output: "",
+	}
+	expression.accept(&printerVisitor)
+	fmt.Println("Output for printerVisitor:", printerVisitor.output)
 
-  fmt.Println(expression.accept(printer))
-
-  //	if len(os.Args) > 2 {
-  //		fmt.Println("Usage: glox [script]")
-  //		os.Exit(64)
-  //	} else if len(os.Args) == 2 {
-  //		runFile(os.Args[1])
-  //	} else {
-  //		runPrompt()
-  //	}
+	//	if len(os.Args) > 2 {
+	//		fmt.Println("Usage: glox [script]")
+	//		os.Exit(64)
+	//	} else if len(os.Args) == 2 {
+	//		runFile(os.Args[1])
+	//	} else {
+	//		runPrompt()
+	//	}
 }
 
 // =============== Vistor Interface =============== //
+
 type Visitor interface {
-  binaryExpr(expr Expr) interface{}
-  groupingExpr(expr Expr) interface{}
-  literalExpr(expr Expr) interface{}
-  unaryExpr(expr Expr) interface{}
+	binaryExpr(expr Binary)
+	groupingExpr(expr Grouping)
+	literalExpr(expr Literal)
+	unaryExpr(expr Unary)
 }
 
-type Printer struct {
+type PrinterVisitor struct {
+	output string
 }
 
-func (p Printer) binaryExpr(expr Expr) interface{} {
-  return "("
+func (p *PrinterVisitor) binaryExpr(expr Binary) {
+	expr.left.accept(p)
+	left := p.output
+	expr.right.accept(p)
+	right := p.output
+	p.output = fmt.Sprintf("(%v %v %v)", expr.operator.lexeme, left, right)
 }
 
-func (p Printer) groupingExpr(expr Expr) interface{} {
-  return "grouping"
+func (p *PrinterVisitor) groupingExpr(expr Grouping) {
+	expr.expression.accept(p)
+	p.output = fmt.Sprintf("(group %v)", p.output)
 }
 
-func (p Printer) literalExpr(expr Expr) interface{} {
-  return "literal"
+func (p *PrinterVisitor) unaryExpr(expr Unary) {
+	expr.right.accept(p)
+	p.output = fmt.Sprintf("(%v %v)", expr.operator.lexeme, p.output)
 }
 
-func (p Printer) unaryExpr(expr Expr) interface{} {
-  return "unary"
+func (p *PrinterVisitor) literalExpr(expr Literal) {
+	p.output = fmt.Sprint(expr.value)
 }
 
 // =============== Expression Interface =============== //
 type Expr interface {
-  accept(v Visitor) interface{}
+	accept(v Visitor)
 }
 
 type Binary struct {
-  left Expr
-  operator Token
-  right Expr
+	left     Expr
+	operator Token
+	right    Expr
 }
 
 type Unary struct {
-  operator Token
-  right Expr
+	operator Token
+	right    Expr
 }
 
 type Grouping struct {
-  expression Expr
+	expression Expr
 }
 
 type Literal struct {
-  value interface{}
+	value interface{}
 }
 
-func (b *Binary) accept(v Visitor) interface{} {
-  return v.binaryExpr(b)
+func (this Binary) accept(v Visitor) {
+	v.binaryExpr(this)
 }
 
-func (u *Unary) accept(v Visitor) interface{} {
-  return v.unaryExpr(u)
+func (this Unary) accept(v Visitor) {
+	v.unaryExpr(this)
 }
 
-func (g *Grouping) accept(v Visitor) interface{} {
-  return v.groupingExpr(g)
+func (this Grouping) accept(v Visitor) {
+	v.groupingExpr(this)
 }
 
-func (l *Literal) accept(v Visitor) interface{} {
-  return v.literalExpr(l)
+func (this Literal) accept(v Visitor) {
+	v.literalExpr(this)
 }
