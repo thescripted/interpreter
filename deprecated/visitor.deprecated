@@ -1,0 +1,75 @@
+
+// =============== Vistor Interface =============== //
+
+type Visitor interface {
+	binaryExpr(expr Binary)
+	groupingExpr(expr Grouping)
+	literalExpr(expr Literal)
+	unaryExpr(expr Unary)
+}
+
+type PrinterVisitor struct {
+	output string
+}
+
+func (p *PrinterVisitor) binaryExpr(expr Binary) {
+	expr.left.accept(p)
+	left := p.output
+	expr.right.accept(p)
+	right := p.output
+	p.output = fmt.Sprintf("(%v %v %v)", expr.operator.lexeme, left, right)
+}
+
+func (p *PrinterVisitor) groupingExpr(expr Grouping) {
+	expr.expression.accept(p)
+	p.output = fmt.Sprintf("(group %v)", p.output)
+}
+
+func (p *PrinterVisitor) unaryExpr(expr Unary) {
+	expr.right.accept(p)
+	p.output = fmt.Sprintf("(%v %v)", expr.operator.lexeme, p.output)
+}
+
+func (p *PrinterVisitor) literalExpr(expr Literal) {
+	p.output = fmt.Sprint(expr.value)
+}
+
+// =============== Expression Interface =============== //
+type Expr interface {
+	accept(v Visitor)
+}
+
+type Binary struct {
+	left     Expr
+	operator Token
+	right    Expr
+}
+
+type Unary struct {
+	operator Token
+	right    Expr
+}
+
+type Grouping struct {
+	expression Expr
+}
+
+type Literal struct {
+	value interface{}
+}
+
+func (this Binary) accept(v Visitor) {
+	v.binaryExpr(this)
+}
+
+func (this Unary) accept(v Visitor) {
+	v.unaryExpr(this)
+}
+
+func (this Grouping) accept(v Visitor) {
+	v.groupingExpr(this)
+}
+
+func (this Literal) accept(v Visitor) {
+	v.literalExpr(this)
+}
