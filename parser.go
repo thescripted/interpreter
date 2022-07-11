@@ -117,9 +117,11 @@ func (p *Parser) primary() Expression {
 		if p.currentToken().t != RIGHT_PAREN {
 			log.Fatal("The user fucked up.")
 		}
-		return expr
+		return GroupingExpression{
+			expression: expr,
+		}
 	}
-	return LiteralExpression{value: nil} // should probably error
+	return LiteralExpression{value: nil} // should probably error instead
 }
 
 // peek looks at what the next token is. Returns a nil token if there is not a next one.
