@@ -119,10 +119,7 @@ func (ts *TokenScanner) Scan() []Token {
 				value:  lexeme,
 			})
 
-		case ' ':
-		case '\r':
-		case '\t':
-		case '\n':
+		case ' ', '\r', '\t', '\n':
 			break
 		default:
 			if unicode.IsDigit(rune(c)) {
