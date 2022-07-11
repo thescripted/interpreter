@@ -1,5 +1,7 @@
 package main
 
+import "log"
+
 type Parser struct {
 	tokens  []Token
 	current int
@@ -116,7 +118,14 @@ func (p *Parser) primary() Expression {
 		return LiteralExpression{value: literal.lexeme} // should be value
 	case NIL:
 		return LiteralExpression{value: literal.lexeme} // should be value
-
+	case LEFT_PAREN:
+		p.advance(1)
+		expr := p.expression()
+		p.advance(1) // this MUST advance to a right paren. Otherwise the user fucked up.
+		if p.currentToken().t != RIGHT_PAREN {
+			log.Fatal("The user fucked up.")
+		}
+		return expr
 	}
 	return LiteralExpression{value: nil} // should probably error
 }
@@ -131,7 +140,7 @@ func (p *Parser) peek() Token {
 
 // advanceToken moves to the next token
 func (p *Parser) advance(n int) {
-	p.current = p.current + n
+	p.current = p.current + n // this can break.
 }
 
 // currentToken returns the current token
