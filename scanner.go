@@ -102,7 +102,7 @@ func (ts *TokenScanner) Scan() []Token {
 			} else {
 				tokens = ts.appendToken(tokens, SLASH)
 			}
-		case '"':
+		case '"': // this is incorrect.
 			for ts.current < len(ts.source) && ts.peek() != '"' {
 				ts.advance()
 			}

@@ -18,9 +18,12 @@ func repl() {
 func run(code string) {
 	tokenScanner := NewTokenScanner(code)
 	tokens := tokenScanner.Scan()
-	for _, token := range tokens {
-		fmt.Printf("token: %v\n", token)
-	}
+	parser := NewParser(tokens)
+	expression := parser.Parse()
+	fmt.Printf("expression: %#v\n", expression)
+	// for _, token := range tokens {
+	// 	fmt.Printf("token: %v\n", token)
+	// }
 }
 
 func main() {
