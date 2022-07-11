@@ -108,16 +108,8 @@ func (p *Parser) unary() Expression {
 func (p *Parser) primary() Expression {
 	literal := p.currentToken()
 	switch literal.t {
-	case NUMBER:
-		return LiteralExpression{value: literal.lexeme} // should be value
-	case STRING:
-		return LiteralExpression{value: literal.lexeme} // should be value
-	case TRUE:
-		return LiteralExpression{value: literal.lexeme} // should be value
-	case FALSE:
-		return LiteralExpression{value: literal.lexeme} // should be value
-	case NIL:
-		return LiteralExpression{value: literal.lexeme} // should be value
+	case NUMBER, STRING, TRUE, FALSE, NIL:
+		return LiteralExpression{value: literal.value}
 	case LEFT_PAREN:
 		p.advance(1)
 		expr := p.expression()

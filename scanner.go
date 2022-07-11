@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"strconv"
 	"unicode"
 )
@@ -41,7 +42,7 @@ func NewTokenScanner(source string) *TokenScanner {
 // Scan takes in source code and emits tokens
 func (ts *TokenScanner) Scan() []Token {
 	var tokens []Token
-	for ts.current < len(ts.source) {
+	for !ts.finished() {
 		ts.start = ts.current
 		c := ts.source[ts.current]
 		switch c {
@@ -102,14 +103,22 @@ func (ts *TokenScanner) Scan() []Token {
 			} else {
 				tokens = ts.appendToken(tokens, SLASH)
 			}
-		case '"': // this is incorrect.
+		case '"':
 			for ts.current < len(ts.source) && ts.peek() != '"' {
 				ts.advance()
 			}
+			if ts.peek() == '"' {
+				ts.advance()
+			} else { // we didn't close the quotation. Berate the user.
+				log.Fatalf("stupid fucking user")
+			}
+			lexeme := ts.source[ts.start+1 : ts.current+1]
 			tokens = append(tokens, Token{
 				t:      STRING,
-				lexeme: ts.source[ts.start+1 : ts.current],
+				lexeme: lexeme,
+				value:  lexeme,
 			})
+
 		case ' ':
 		case '\r':
 		case '\t':
@@ -126,11 +135,15 @@ func (ts *TokenScanner) Scan() []Token {
 						ts.advance()
 					}
 				}
-				_, err := strconv.ParseFloat(ts.sliceToCurrent(), 64)
+				value, err := strconv.ParseFloat(ts.sliceToCurrent(), 64)
 				if err != nil {
 					panic(err) // oh god
 				}
-				tokens = ts.appendToken(tokens, NUMBER)
+				tokens = append(tokens, Token{
+					t:      NUMBER,
+					lexeme: ts.sliceToCurrent(), // still dont like this
+					value:  value,
+				})
 			} else if unicode.IsLetter(rune(c)) {
 				for unicode.IsLetter(rune(ts.peek())) || unicode.IsDigit(rune(ts.peek())) {
 					ts.advance()
@@ -140,13 +153,32 @@ func (ts *TokenScanner) Scan() []Token {
 				if val, ok := tokenKeywords[text]; ok {
 					tokenType = val
 				}
-				tokenType = IDENTIFIER
-				tokens = ts.appendToken(tokens, tokenType)
+				// can we do this elsewhere? I don't like this.
+				// we're also using append and appendToken a lot. Can this be unified?
+				switch tokenType {
+				case TRUE:
+					tokens = append(tokens, Token{
+						t:      TRUE,
+						lexeme: ts.sliceToCurrent(),
+						value:  true,
+					})
+				case FALSE:
+					tokens = append(tokens, Token{
+						t:      TRUE,
+						lexeme: ts.sliceToCurrent(),
+						value:  false,
+					})
+				case NIL:
+					tokens = append(tokens, Token{
+						t:      TRUE,
+						lexeme: ts.sliceToCurrent(),
+						value:  nil,
+					})
+				}
 
 			}
 		}
-
-		// advance to the next token on complete
+		// advance to the next token on complete. I don't like this much either. It's my code. I hate it all.
 		ts.advance()
 	}
 	return tokens
@@ -180,6 +212,7 @@ func (ts *TokenScanner) peekNext() byte {
 	return ts.source[ts.current+2]
 }
 
+// finished checks if we've completed scanning. Might not be useful. Only used in one spot.
 func (ts *TokenScanner) finished() bool {
 	if ts.current >= len(ts.source) {
 		return true
@@ -187,10 +220,11 @@ func (ts *TokenScanner) finished() bool {
 	return false
 }
 
+// appendToken appends a token to the tokens array. It will not assign a value and its lexeme will be from the start to the current character.
 func (ts *TokenScanner) appendToken(tokens []Token, ttype TokenType) []Token { // really should be called "appendTokenWithAssumedLexeme"
 	token := Token{
 		t:      ttype,
-		lexeme: ts.sliceToCurrent(),
+		lexeme: ts.sliceToCurrent(), // I dont like this
 	}
 	return append(tokens, token)
 }

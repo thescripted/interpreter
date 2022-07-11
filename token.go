@@ -57,8 +57,9 @@ const (
 type Token struct {
 	t      TokenType
 	lexeme string
+	value  interface{}
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("TokenType: %v, Lexeme: %v", t.t, t.lexeme)
+	return fmt.Sprintf("TokenType: %v, Lexeme: %v, Value: %v", t.t, t.lexeme, t.value)
 }
