@@ -20,7 +20,7 @@ func run(code string) {
 	tokens := tokenScanner.Scan()
 	parser := NewParser(tokens)
 	expression := parser.Parse()
-	fmt.Printf("expression: %#v\n", expression)
+	fmt.Printf("expression: %v\n", expression)
 	// for _, token := range tokens {
 	// 	fmt.Printf("token: %v\n", token)
 	// }

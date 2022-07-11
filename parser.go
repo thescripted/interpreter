@@ -23,13 +23,15 @@ func (p *Parser) expression() Expression {
 
 func (p *Parser) equality() Expression {
 	left := p.comparison()
-	if op := p.peek(); op.t == BANG_EQUAL || op.t == EQUAL_EQUAL {
-		p.advance()
-		p.advance() // can syntax error. Should handle.
+	op := p.peek()
+	for op.t == BANG_EQUAL || op.t == EQUAL_EQUAL {
+		operand := op
+		p.advance(2)
+		op = p.peek()
 		right := p.comparison()
 		return BinaryExpression{
 			left:    left,
-			operand: op,
+			operand: operand,
 			right:   right,
 		}
 	}
@@ -38,13 +40,15 @@ func (p *Parser) equality() Expression {
 
 func (p *Parser) comparison() Expression {
 	left := p.term()
-	if op := p.peek(); op.t == LESS || op.t == LESS_EQUAL || op.t == EQUAL || op.t == GREATER_EQUAL {
-		p.advance()
-		p.advance() // can syntax error. Should handle.
+	op := p.peek()
+	for op.t == LESS || op.t == LESS_EQUAL || op.t == EQUAL || op.t == GREATER_EQUAL {
+		operand := op
+		p.advance(2)
+		op = p.peek()
 		right := p.term()
 		return BinaryExpression{
 			left:    left,
-			operand: op,
+			operand: operand,
 			right:   right,
 		}
 	}
@@ -53,28 +57,33 @@ func (p *Parser) comparison() Expression {
 
 func (p *Parser) term() Expression {
 	left := p.factor()
-	if op := p.peek(); op.t == PLUS || op.t == MINUS {
-		p.advance()
-		p.advance() // can syntax error. Should handle.
+	op := p.peek()
+	for op.t == PLUS || op.t == MINUS {
+		operand := op
+		p.advance(2)
+		op = p.peek()
 		right := p.factor()
-		return BinaryExpression{
+		left = BinaryExpression{
 			left:    left,
-			operand: op,
+			operand: operand,
 			right:   right,
 		}
 	}
+
 	return left
 }
 
 func (p *Parser) factor() Expression {
 	left := p.unary()
-	if op := p.peek(); op.t == STAR || op.t == SLASH {
-		p.advance()
-		p.advance() // can syntax error. Should handle.
+	op := p.peek()
+	for op.t == STAR || op.t == SLASH {
+		operand := op
+		p.advance(2)
+		op = p.peek()
 		right := p.unary()
 		return BinaryExpression{
 			left:    left,
-			operand: op,
+			operand: operand,
 			right:   right,
 		}
 	}
@@ -83,7 +92,7 @@ func (p *Parser) factor() Expression {
 
 func (p *Parser) unary() Expression {
 	if op := p.currentToken(); op.t == BANG || op.t == MINUS {
-		p.advance() // can syntax error. Should handle.
+		p.advance(1) // can syntax error. Should handle.
 		right := p.unary()
 		return UnaryExpression{
 			operand: op,
@@ -121,8 +130,8 @@ func (p *Parser) peek() Token {
 }
 
 // advanceToken moves to the next token
-func (p *Parser) advance() {
-	p.current++
+func (p *Parser) advance(n int) {
+	p.current = p.current + n
 }
 
 // currentToken returns the current token
