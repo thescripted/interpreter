@@ -1,14 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"errors"
 )
 
 // expressions are evaluated with go's built-in primitives and stuff.
 
+// panicking makes more sense here. If there is an user error deep inside some call stack somewhere in our application
+// only the top-level error catcher should report it right?
 type Expression interface { // evaluate()
-	evaluate() interface{} // this value is ambigious, right?
+	evaluate() (interface{}, error) // this value is ambigious, right?
 }
 
 type BinaryExpression struct {
@@ -18,39 +19,43 @@ type BinaryExpression struct {
 }
 
 // TODO: comparisons and equalities are missing here.
-func (e BinaryExpression) evaluate() interface{} {
-	left := e.left.evaluate()
-	right := e.right.evaluate()
+func (e BinaryExpression) evaluate() (interface{}, error) { // to panic or to return an error....
+	left, err := e.left.evaluate()
+	if err != nil {
+		return nil, err
+	}
+	right, err := e.right.evaluate()
+	if err != nil {
+		return nil, err
+	}
 	switch e.operand.t {
 	case MINUS:
-		return left.(float64) - right.(float64) // this ok? These will panic if not true. Should handle those errors before.
+		return left.(float64) - right.(float64), nil // this ok? These will panic if not true. Should handle those errors before.
 	case SLASH:
-		return left.(float64) / right.(float64) // this ok?
+		return left.(float64) / right.(float64), nil // this ok?
 	case STAR:
-		return left.(float64) * right.(float64) // this ok?
+		return left.(float64) * right.(float64), nil // this ok?
 	case PLUS: // we can string concat. Typeswitch on that.
 		switch left.(type) {
 		case string:
 			if _, ok := right.(string); ok {
-				return left.(string) + right.(string)
+				return left.(string) + right.(string), nil
 			}
 		case float64: // maybe others?
 			if _, ok := right.(float64); ok { // this is fucking ridicoulous.
-				return left.(float64) + right.(float64)
+				return left.(float64) + right.(float64), nil
 			}
 		}
 	}
-	fmt.Println("HELLO??")
-	log.Fatalf("who designed this compiler that allowed this error to fall through???")
-	return nil // if you reach thhis point, then you fucked up.
+	return nil, errors.New("dumbass") // if you reach thhis point, then you fucked up.
 }
 
 type LiteralExpression struct {
 	value interface{}
 }
 
-func (e LiteralExpression) evaluate() interface{} {
-	return e.value
+func (e LiteralExpression) evaluate() (interface{}, error) {
+	return e.value, nil
 }
 
 type UnaryExpression struct {
@@ -58,22 +63,24 @@ type UnaryExpression struct {
 	right   Expression
 }
 
-func (e UnaryExpression) evaluate() interface{} {
-	right := e.right.evaluate()
+func (e UnaryExpression) evaluate() (interface{}, error) {
+	right, err := e.right.evaluate()
+	if err != nil {
+		return nil, err
+	}
 	switch e.operand.t {
 	case MINUS:
-		return -right.(float64) // what if the user does -"I am a dumbass user" ?? not all casts are ok.
+		return -right.(float64), nil // what if the user does -"I am a dumbass user" ?? not all casts are ok. Should throw error.
 	case BANG:
-		return !right.(bool) // same here.
+		return !right.(bool), nil // same here.
 	}
-	log.Fatalf("who designed this compiler that allowed this error to fall through???")
-	return nil // if you reach thhis point, then you fucked up.
+	return nil, errors.New("idiot") // if you reach thhis point, then you fucked up.
 }
 
 type GroupingExpression struct {
 	expression Expression
 }
 
-func (e GroupingExpression) evaluate() interface{} {
+func (e GroupingExpression) evaluate() (interface{}, error) {
 	return e.expression.evaluate()
 }
