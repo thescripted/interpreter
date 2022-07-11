@@ -200,7 +200,7 @@ func (ts *TokenScanner) peek() byte {
 	return ts.source[ts.current+1]
 }
 
-// peekNext lookahead two characters
+// peekNext lookahead two characters. Stupid.
 func (ts *TokenScanner) peekNext() byte {
 	if ts.current+2 >= len(ts.source) {
 		return '\x00'
