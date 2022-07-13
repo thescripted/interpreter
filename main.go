@@ -6,6 +6,10 @@ import (
 	"os"
 )
 
+func main() {
+	repl()
+}
+
 func repl() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
@@ -15,22 +19,17 @@ func repl() {
 	}
 }
 
+func exec(st Statement) {
+	st.evaluate()
+}
+
 func run(code string) {
 	tokenScanner := NewTokenScanner(code)
 	tokens := tokenScanner.Scan()
 	parser := NewParser(tokens)
-	expression := parser.Parse()
-	result, err := expression.evaluate()
-	if err != nil {
-		fmt.Printf("error: %v\n", err.Error())
-		return
+	statements := parser.Parse()
+	for _, st := range statements {
+		val := st.evaluate()
+		fmt.Println("return:", val) // not good in a non-REPL setting
 	}
-	fmt.Printf("expression result: %#v\n", result)
-	// for _, token := range tokens {
-	// 	fmt.Printf("token: %v\n", token)
-	// }
-}
-
-func main() {
-	repl()
 }
