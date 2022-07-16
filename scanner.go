@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"unicode"
@@ -112,7 +113,7 @@ func (ts *TokenScanner) Scan() []Token {
 			} else { // we didn't close the quotation. Berate the user.
 				log.Fatalf("stupid fucking user")
 			}
-			lexeme := ts.source[ts.start+1 : ts.current+1]
+			lexeme := ts.source[ts.start+1 : ts.current]
 			tokens = append(tokens, Token{
 				t:      STRING,
 				lexeme: lexeme,
@@ -146,7 +147,7 @@ func (ts *TokenScanner) Scan() []Token {
 					ts.advance()
 				}
 				text := ts.sliceToCurrent()
-				var tokenType TokenType
+				var tokenType TokenType = IDENTIFIER // defaults to identifier?
 				if val, ok := tokenKeywords[text]; ok {
 					tokenType = val
 				}
@@ -166,8 +167,32 @@ func (ts *TokenScanner) Scan() []Token {
 						value:  false,
 					})
 				case NIL:
-					tokens = append(tokens, Token{
+					tokens = append(tokens, Token{ // can be simplified
 						t:      TRUE,
+						lexeme: ts.sliceToCurrent(),
+						value:  nil,
+					})
+				case PRINT:
+					tokens = append(tokens, Token{
+						t:      PRINT,
+						lexeme: ts.sliceToCurrent(),
+						value:  nil,
+					})
+				case VAR:
+					tokens = append(tokens, Token{
+						t:      VAR,
+						lexeme: ts.sliceToCurrent(),
+						value:  nil,
+					})
+				case IDENTIFIER: // might not be correct but we will see
+					tokens = append(tokens, Token{
+						t:      IDENTIFIER,
+						lexeme: ts.sliceToCurrent(),
+						value:  nil,
+					})
+				default:
+					fmt.Printf("you missed some, maybe: %#v", Token{
+						t:      tokenType,
 						lexeme: ts.sliceToCurrent(),
 						value:  nil,
 					})

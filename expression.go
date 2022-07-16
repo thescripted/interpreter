@@ -1,5 +1,3 @@
-package main
-
 // expressions are evaluated with go's built-in primitives and stuff.
 
 // panicking makes more sense here. If there is an user error deep inside some call stack somewhere in our application
@@ -7,8 +5,11 @@ package main
 
 // No returned errors. We're panicking instead. All internal tools should return their error + details (Runtime error, Syntax, etc...)
 // error.js will capture all panicked errors and hand them off to the enduser correctly.
-type Expression interface { // evaluate()
-	evaluate() interface{} // this value is ambigious, right?
+
+package main
+
+type Expression interface {
+	evaluate() interface{}
 }
 
 type BinaryExpression struct {
@@ -17,7 +18,23 @@ type BinaryExpression struct {
 	right   Expression
 }
 
-// TODO: comparisons and equalities are missing here.
+type UnaryExpression struct {
+	operand Token
+	right   Expression
+}
+
+type LiteralExpression struct {
+	value interface{}
+}
+
+type VariableExpression struct {
+	name string
+}
+
+type GroupingExpression struct {
+	expression Expression
+}
+
 func (e BinaryExpression) evaluate() interface{} { // to panic or to return an error....
 	left := e.left.evaluate()
 	right := e.right.evaluate()
@@ -56,19 +73,6 @@ func (e BinaryExpression) evaluate() interface{} { // to panic or to return an e
 	return nil // if you reach thhis point, then you fucked up.
 }
 
-type LiteralExpression struct {
-	value interface{}
-}
-
-func (e LiteralExpression) evaluate() interface{} {
-	return e.value
-}
-
-type UnaryExpression struct {
-	operand Token
-	right   Expression
-}
-
 func (e UnaryExpression) evaluate() interface{} {
 	right := e.right.evaluate()
 	switch e.operand.t {
@@ -80,8 +84,13 @@ func (e UnaryExpression) evaluate() interface{} {
 	return nil // this is bad. If this happens, then you--the code writer--messed up.
 }
 
-type GroupingExpression struct {
-	expression Expression
+func (e LiteralExpression) evaluate() interface{} {
+	return e.value
+}
+
+func (e VariableExpression) evaluate() interface{} {
+	value := _globalEnvironment.get(e.name) // handle runtime error: name is not defined
+	return value
 }
 
 func (e GroupingExpression) evaluate() interface{} {

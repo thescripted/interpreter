@@ -1,19 +1,40 @@
-// statements are not expressions. That's why they're separated. but they feed into the parser the same way-ish, right?
-// might update.
+// all statements can be evaluated. Statements are code followed by a semicolon.
 
 package main
 
 import "fmt"
 
-type Statement struct { // I don't like this struct. Fix it.
-	expression Expression
-	print      Expression
+type Statement interface {
+	eval()
 }
 
-func (s Statement) evaluate() interface{} {
-	if s.expression != nil { // this might 1) be wrong, and 2) be inefficient
-		return s.expression.evaluate()
+type VariableStatment struct {
+	name       string
+	expression Expression
+}
+
+type PrintStatement struct {
+	expression Expression
+}
+
+type ExpressionStatement struct {
+	expression Expression
+}
+
+func (v VariableStatment) eval() {
+	if v.expression == nil {
+		_globalEnvironment.put(v.name, nil)
+	} else {
+		value := v.expression.evaluate()
+		_globalEnvironment.put(v.name, value)
 	}
-	fmt.Println(s.print.evaluate())
-	return nil
+}
+
+func (p PrintStatement) eval() {
+	value := p.expression.evaluate()
+	fmt.Println(value)
+}
+
+func (e ExpressionStatement) eval() {
+	e.expression.evaluate()
 }

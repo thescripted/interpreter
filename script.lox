@@ -1,0 +1,8 @@
+// sample script using the lox programming language
+// this file should be parsable by lox
+// these comments should be ignored
+
+var adjective = " sucks";
+var worstSchoolNA = "georgia tech";
+print worstSchoolNA + adjective;
+print 84 * (145 / 29);

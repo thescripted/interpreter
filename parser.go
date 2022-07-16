@@ -22,41 +22,41 @@ func (p *Parser) Parse() []Statement {
 	var statements []Statement
 	for p.current < len(p.tokens) { // Is this the best way of knmowing if we're at EOF? Should really think this through
 		statements = append(statements, p.statement())
-		p.advance(1) // Someone needs to move to the next statement. Very very imperative, I dont' like it.
+		p.advance(1)
 	}
 	return statements
 }
 
 func (p *Parser) statement() Statement {
-	if token := p.currentToken(); token.t == PRINT {
+	var st Statement
+	switch p.currentToken().t {
+	case VAR:
 		p.advance(1)
-		return p.printStatement()
+		if p.currentToken().t != IDENTIFIER {
+			panic("something is wrong")
+		}
+		name := p.currentToken().lexeme
+		var expr Expression = nil
+		if p.peek().t == EQUAL {
+			p.advance(2)
+			expr = p.expression()
+		}
+		st = VariableStatment{name: name, expression: expr}
+	case PRINT:
+		p.advance(1)
+		expr := p.expression()
+		st = PrintStatement{expression: expr}
+	default:
+		expr := p.expression()
+		st = ExpressionStatement{expression: expr}
 	}
-	return p.expressionStatement()
-}
 
-func (p *Parser) expressionStatement() Statement {
-	value := p.expression()
-	if p.peek().t != SEMICOLON {
-		panic("you messed up")
+	p.advance(1)                         // what if we can't advance?
+	if p.currentToken().t != SEMICOLON { // all statements ends in semicolons.
+		panic("something is wrong")
 	}
-	p.advance(1) // someone needs to consume the semicolon. Should it be here or higher up (or a different implementation?)
-	return Statement{
-		expression: value,
-		print:      nil,
-	}
-}
 
-func (p *Parser) printStatement() Statement {
-	value := p.expression()
-	if p.peek().t != SEMICOLON {
-		return Statement{} // this is wrong. You messed up
-	}
-	p.advance(1)
-	return Statement{
-		expression: nil,
-		print:      value,
-	}
+	return st
 }
 
 func (p *Parser) expression() Expression {
@@ -83,9 +83,9 @@ func (p *Parser) equality() Expression {
 func (p *Parser) comparison() Expression {
 	left := p.term()
 	op := p.peek()
-	for op.t == LESS || op.t == LESS_EQUAL || op.t == EQUAL || op.t == GREATER_EQUAL {
+	for op.t == LESS || op.t == LESS_EQUAL || op.t == GREATER || op.t == GREATER_EQUAL {
 		operand := op
-		p.advance(2) // don't know if this should be allowed hmmmmmmmmmammm
+		p.advance(2)
 		op = p.peek()
 		right := p.term()
 		return BinaryExpression{
@@ -150,6 +150,8 @@ func (p *Parser) primary() Expression {
 	switch literal.t {
 	case NUMBER, STRING, TRUE, FALSE, NIL:
 		return LiteralExpression{value: literal.value}
+	case IDENTIFIER:
+		return VariableExpression{name: literal.lexeme}
 	case LEFT_PAREN:
 		p.advance(1)
 		expr := p.expression()
@@ -161,7 +163,7 @@ func (p *Parser) primary() Expression {
 			expression: expr,
 		}
 	}
-	return LiteralExpression{value: nil} // should probably error instead
+	return nil
 }
 
 // peek looks at what the next token is. Returns a nil token if there is not a next one.
